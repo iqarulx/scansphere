@@ -1,12 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_link_previewer/flutter_link_previewer.dart';
-import 'package:flutter_chat_types/flutter_chat_types.dart' show PreviewData;
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '/ui/src/scan_options.dart';
-import '/ui/src/sheet.dart';
 import '/view/create/create.dart';
 import '/view/scan/scan.dart';
 import '../../ui/ui.dart';
@@ -93,8 +89,6 @@ class _HomeState extends State<Home> {
     );
   }
 
-  Map<String, PreviewData> datas = {};
-
   Widget _buildBody(context) {
     if (_scanList.isNotEmpty) {
       return ListView(
@@ -154,19 +148,14 @@ class _HomeState extends State<Home> {
                 },
                 title: _scanList[index].data.contains('http') ||
                         _scanList[index].data.contains('https')
-                    ? LinkPreview(
-                        enableAnimation: true,
-                        onPreviewDataFetched: (data) {
-                          setState(() {
-                            datas = {
-                              ...datas,
-                              _scanList[index].data: data,
-                            };
-                          });
-                        },
-                        previewData: datas[_scanList[index].data],
-                        text: _scanList[index].data,
-                        width: MediaQuery.of(context).size.width,
+                    ? Text(
+                        _scanList[index].data,
+                        style: const TextStyle(
+                          color: Colors.blue,
+                          decoration: TextDecoration.underline,
+                          decorationColor: Colors.blue,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       )
                     : Text(
                         _scanList[index].data,

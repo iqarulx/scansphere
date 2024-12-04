@@ -1,14 +1,19 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:scansphere/ui/src/form_fields.dart';
+import 'package:iconsax/iconsax.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:syncfusion_flutter_barcodes/barcodes.dart';
-import '../../services/services.dart';
-import '../../ui/ui.dart';
-import '../../ui/src/open_file.dart' as helper;
+import '../../utils/src/pick_image.dart';
+import '/utils/utils.dart';
+import '/services/services.dart';
+import '/ui/ui.dart';
+import 'package:path/path.dart' as path;
 
 class Create extends StatefulWidget {
   const Create({super.key});
@@ -21,6 +26,7 @@ class _CreateState extends State<Create> {
   final TextEditingController _codeController = TextEditingController();
   String codeType = "qr";
   String codeValue = "";
+  File? _qrLogoFile;
 
   final GlobalKey _qrObjectKey = GlobalKey();
   final GlobalKey _barCodeObjectKey = GlobalKey();
@@ -38,6 +44,20 @@ class _CreateState extends State<Create> {
           },
         ),
         title: const Text("Create New"),
+        actions: [
+          IconButton(
+            tooltip: "Image Upload",
+            icon: const Icon(CupertinoIcons.cloud_upload, color: Colors.white),
+            onPressed: () async {
+              var v = await PickImage.pickImage();
+              if (_qrLogoFile != null) {
+                _qrLogoFile!.deleteSync();
+              }
+              _qrLogoFile = v;
+              setState(() {});
+            },
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(10),
@@ -116,14 +136,49 @@ class _CreateState extends State<Create> {
               codeValue = value;
               setState(() {});
             },
-            maxLines: 5,
+            maxLines: 2,
             hintText: "Your content here...",
           ),
           const SizedBox(height: 10),
+          _buildLogoFile(),
           _buildCodeView(context),
         ],
       ),
     );
+  }
+
+  Widget _buildLogoFile() {
+    if (_qrLogoFile != null) {
+      return Column(
+        children: [
+          Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.pureWhiteColor,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(path.basename(_qrLogoFile!.path)),
+                ),
+                IconButton(
+                  icon: const Icon(Iconsax.trash),
+                  onPressed: () {
+                    _qrLogoFile!.deleteSync();
+                    _qrLogoFile = null;
+                    setState(() {});
+                  },
+                )
+              ],
+            ),
+          ),
+          const SizedBox(height: 10)
+        ],
+      );
+    }
+    return Container();
   }
 
   Widget _buildCodeView(context) {
@@ -141,13 +196,23 @@ class _CreateState extends State<Create> {
                   color: AppColors.pureWhiteColor,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: SfBarcodeGenerator(
-                  backgroundColor: Colors.white,
-                  value: codeValue,
-                  symbology: QRCode(),
-                  showValue: true,
-                  textStyle: Theme.of(context).textTheme.bodyLarge,
-                ),
+                child: _qrLogoFile != null
+                    ? QrImageView(
+                        data: codeValue,
+                        version: QrVersions.auto,
+                        size: 320,
+                        gapless: false,
+                        embeddedImage: FileImage(_qrLogoFile!),
+                        embeddedImageStyle: const QrEmbeddedImageStyle(
+                          size: Size(80, 80),
+                        ),
+                      )
+                    : QrImageView(
+                        data: codeValue,
+                        version: QrVersions.auto,
+                        size: 320,
+                        gapless: false,
+                      ),
               ),
             )
           else
@@ -190,8 +255,7 @@ class _CreateState extends State<Create> {
                         imgData = await _getBarcodeImage();
                       }
                       if (imgData != null) {
-                        path = await helper.saveFile(
-                            bt: imgData, fn: "$codeType.png");
+                        path = await saveFile(bt: imgData, fn: "$codeType.png");
                       }
                       if (path != null) {
                         await Share.shareXFiles(
@@ -241,8 +305,7 @@ class _CreateState extends State<Create> {
                         imgData = await _getBarcodeImage();
                       }
                       if (imgData != null) {
-                        await helper.launchFile(
-                            bt: imgData, fn: "$codeType.png");
+                        await launchFile(bt: imgData, fn: "$codeType.png");
                       }
                     },
                     child: Container(
