@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '/view/create/create.dart';
 import '/view/scan/scan.dart';
-import '../../ui/ui.dart';
+import '/ui/ui.dart';
 import '/services/services.dart';
 import '/model/model.dart';
 

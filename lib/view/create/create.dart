@@ -1,19 +1,32 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:ui' as ui;
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:syncfusion_flutter_barcodes/barcodes.dart';
-import '../../utils/src/pick_image.dart';
+import 'package:path/path.dart' as path;
+import 'dart:ui' as ui;
+import '/utils/utils.dart' as helper;
 import '/utils/utils.dart';
 import '/services/services.dart';
 import '/ui/ui.dart';
-import 'package:path/path.dart' as path;
+
+Future<File> _captureAndSaveWidget(GlobalKey key, String fileName) async {
+  RenderRepaintBoundary boundary =
+      key.currentContext?.findRenderObject() as RenderRepaintBoundary;
+
+  ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+  ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+  final buffer = byteData!.buffer;
+
+  final directory = await getApplicationDocumentsDirectory();
+  final file = File('${directory.path}/$fileName');
+  return await file.writeAsBytes(buffer.asUint8List());
+}
 
 class Create extends StatefulWidget {
   const Create({super.key});
@@ -27,10 +40,8 @@ class _CreateState extends State<Create> {
   String codeType = "qr";
   String codeValue = "";
   File? _qrLogoFile;
-
-  final GlobalKey _qrObjectKey = GlobalKey();
-  final GlobalKey _barCodeObjectKey = GlobalKey();
-
+  final GlobalKey _qrKey = GlobalKey();
+  final GlobalKey _barcodeKey = GlobalKey();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -141,7 +152,157 @@ class _CreateState extends State<Create> {
           ),
           const SizedBox(height: 10),
           _buildLogoFile(),
-          _buildCodeView(context),
+          if (codeValue.isNotEmpty)
+            Column(
+              children: [
+                if (codeType == "qr")
+                  RepaintBoundary(
+                    key: _qrKey,
+                    child: Container(
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.only(
+                          top: 20, bottom: 10, left: 10, right: 10),
+                      decoration: BoxDecoration(
+                        color: AppColors.pureWhiteColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: _qrLogoFile != null
+                          ? QrImageView(
+                              data: codeValue,
+                              version: QrVersions.auto,
+                              size: 320,
+                              gapless: false,
+                              embeddedImage: FileImage(_qrLogoFile!),
+                              embeddedImageStyle: const QrEmbeddedImageStyle(
+                                size: Size(80, 80),
+                              ),
+                            )
+                          : QrImageView(
+                              data: codeValue,
+                              version: QrVersions.auto,
+                              size: 320,
+                              gapless: false,
+                            ),
+                    ),
+                  )
+                else
+                  RepaintBoundary(
+                    key: _barcodeKey,
+                    child: Container(
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.only(
+                          top: 20, bottom: 10, left: 10, right: 10),
+                      decoration: BoxDecoration(
+                        color: AppColors.pureWhiteColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      height: 150,
+                      child: SfBarcodeGenerator(
+                        backgroundColor: Colors.white,
+                        value: codeValue,
+                        showValue: true,
+                        textStyle: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 10),
+                Container(
+                  height: 50,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () async {
+                            final fileName = codeType == "qr"
+                                ? "qr_code.png"
+                                : "barcode.png";
+                            final key = codeType == "qr" ? _qrKey : _barcodeKey;
+                            File file =
+                                await _captureAndSaveWidget(key, fileName);
+                            Share.shareXFiles([XFile(file.path)],
+                                subject: "Shared via My App");
+                          },
+                          child: Container(
+                            alignment: Alignment.center,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              borderRadius: const BorderRadius.only(
+                                bottomLeft: Radius.circular(10),
+                                topLeft: Radius.circular(10),
+                              ),
+                              color: AppColors.pureWhiteColor,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.share_rounded,
+                                  color: AppColors.greyColor,
+                                  size: 23,
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  "Share",
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium!
+                                      .copyWith(color: AppColors.greyColor),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () async {
+                            final fileName = codeType == "qr"
+                                ? "qr_code.png"
+                                : "barcode.png";
+                            final key = codeType == "qr" ? _qrKey : _barcodeKey;
+                            File file =
+                                await _captureAndSaveWidget(key, fileName);
+
+                            await helper.launchFile(
+                                bt: file.readAsBytesSync(), fn: fileName);
+                          },
+                          child: Container(
+                            alignment: Alignment.center,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              borderRadius: const BorderRadius.only(
+                                topRight: Radius.circular(10),
+                                bottomRight: Radius.circular(10),
+                              ),
+                              color: AppColors.pureWhiteColor,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.file_download_outlined,
+                                    color: AppColors.greyColor),
+                                const SizedBox(width: 5),
+                                Text(
+                                  "Download",
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium!
+                                      .copyWith(color: AppColors.greyColor),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );
@@ -179,215 +340,5 @@ class _CreateState extends State<Create> {
       );
     }
     return Container();
-  }
-
-  Widget _buildCodeView(context) {
-    if (codeValue.isNotEmpty) {
-      return Column(
-        children: [
-          if (codeType == "qr")
-            RepaintBoundary(
-              key: _qrObjectKey,
-              child: Container(
-                alignment: Alignment.center,
-                padding: const EdgeInsets.only(
-                    top: 20, bottom: 10, left: 10, right: 10),
-                decoration: BoxDecoration(
-                  color: AppColors.pureWhiteColor,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: _qrLogoFile != null
-                    ? QrImageView(
-                        data: codeValue,
-                        version: QrVersions.auto,
-                        size: 320,
-                        gapless: false,
-                        embeddedImage: FileImage(_qrLogoFile!),
-                        embeddedImageStyle: const QrEmbeddedImageStyle(
-                          size: Size(80, 80),
-                        ),
-                      )
-                    : QrImageView(
-                        data: codeValue,
-                        version: QrVersions.auto,
-                        size: 320,
-                        gapless: false,
-                      ),
-              ),
-            )
-          else
-            RepaintBoundary(
-              key: _barCodeObjectKey,
-              child: Container(
-                alignment: Alignment.center,
-                padding: const EdgeInsets.only(
-                    top: 20, bottom: 10, left: 10, right: 10),
-                decoration: BoxDecoration(
-                  color: AppColors.pureWhiteColor,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                height: 150,
-                child: SfBarcodeGenerator(
-                  backgroundColor: Colors.white,
-                  value: codeValue,
-                  showValue: true,
-                  textStyle: Theme.of(context).textTheme.bodyLarge,
-                ),
-              ),
-            ),
-          const SizedBox(height: 10),
-          Container(
-            height: 50,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: () async {
-                      Uint8List? imgData;
-                      String? path;
-                      if (codeType == "qr") {
-                        imgData = await _getQrImage();
-                      } else {
-                        imgData = await _getBarcodeImage();
-                      }
-                      if (imgData != null) {
-                        path = await saveFile(bt: imgData, fn: "$codeType.png");
-                      }
-                      if (path != null) {
-                        await Share.shareXFiles(
-                          [XFile(path)],
-                          subject: "Shared via ScanSphere 🚀",
-                        );
-                      }
-                    },
-                    child: Container(
-                      alignment: Alignment.center,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(10),
-                          topLeft: Radius.circular(10),
-                        ),
-                        color: AppColors.pureWhiteColor,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.share_rounded,
-                            color: AppColors.greyColor,
-                            size: 23,
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            "Share",
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium!
-                                .copyWith(color: AppColors.greyColor),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: InkWell(
-                    onTap: () async {
-                      Uint8List? imgData;
-                      if (codeType == "qr") {
-                        imgData = await _getQrImage();
-                      } else {
-                        imgData = await _getBarcodeImage();
-                      }
-                      if (imgData != null) {
-                        await launchFile(bt: imgData, fn: "$codeType.png");
-                      }
-                    },
-                    child: Container(
-                      alignment: Alignment.center,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.only(
-                          topRight: Radius.circular(10),
-                          bottomRight: Radius.circular(10),
-                        ),
-                        color: AppColors.pureWhiteColor,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.file_download_outlined,
-                              color: AppColors.greyColor),
-                          const SizedBox(width: 5),
-                          Text(
-                            "Download",
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium!
-                                .copyWith(color: AppColors.greyColor),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    }
-    return Container();
-  }
-
-  Future<Uint8List?> _getQrImage() async {
-    try {
-      futureLoading(context);
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      RenderRepaintBoundary boundary = _qrObjectKey.currentContext
-          ?.findRenderObject() as RenderRepaintBoundary;
-
-      if (boundary.debugNeedsPaint) {
-        await Future.delayed(const Duration(milliseconds: 100));
-      }
-
-      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      ByteData? byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
-      Navigator.pop(context);
-      return byteData?.buffer.asUint8List();
-    } catch (e) {
-      Navigator.pop(context);
-      return null;
-    }
-  }
-
-  Future<Uint8List?> _getBarcodeImage() async {
-    try {
-      futureLoading(context);
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      RenderRepaintBoundary boundary = _barCodeObjectKey.currentContext
-          ?.findRenderObject() as RenderRepaintBoundary;
-
-      if (boundary.debugNeedsPaint) {
-        await Future.delayed(const Duration(milliseconds: 100));
-      }
-
-      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      ByteData? byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
-      Navigator.pop(context);
-      return byteData?.buffer.asUint8List();
-    } catch (e) {
-      Navigator.pop(context);
-      return null;
-    }
   }
 }

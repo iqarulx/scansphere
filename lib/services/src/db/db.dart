@@ -1,5 +1,5 @@
 import 'package:localstore/localstore.dart';
-import 'package:scansphere/model/model.dart';
+import '/model/model.dart';
 
 class Db {
   static final db = Localstore.instance;

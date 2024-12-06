@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:scansphere/services/services.dart';
+import '/services/services.dart';
 
 class Scan extends StatefulWidget {
   const Scan({super.key});
