@@ -1,5 +1,10 @@
+// Flutter imports:
 import 'package:flutter/material.dart';
+
+// Package imports:
 import 'package:mobile_scanner/mobile_scanner.dart';
+
+// Project imports:
 import '/services/services.dart';
 
 class Scan extends StatefulWidget {

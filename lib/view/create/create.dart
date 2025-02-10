@@ -1,19 +1,27 @@
+// Dart imports:
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
+
+// Flutter imports:
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+
+// Package imports:
+import 'package:barcode/barcode.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:syncfusion_flutter_barcodes/barcodes.dart';
-import 'package:path/path.dart' as path;
-import 'dart:ui' as ui;
-import '/utils/utils.dart' as helper;
-import '/utils/utils.dart';
+
+// Project imports:
 import '/services/services.dart';
 import '/ui/ui.dart';
+import '/utils/utils.dart' as helper;
+import '/utils/utils.dart';
 
 Future<File> _captureAndSaveWidget(GlobalKey key, String fileName) async {
   RenderRepaintBoundary boundary =
@@ -42,6 +50,22 @@ class _CreateState extends State<Create> {
   File? _qrLogoFile;
   final GlobalKey _qrKey = GlobalKey();
   final GlobalKey _barcodeKey = GlobalKey();
+
+  File? _barcodeFile;
+
+  void genBarcode() async {
+    final svg = Barcode.code128().toSvg(
+      codeValue,
+      width: 200,
+      height: 80,
+      fontHeight: 15,
+      drawText: true,
+    );
+    var tempDir = await getTemporaryDirectory();
+    _barcodeFile = File('${tempDir.path}/barcode.svg');
+    await _barcodeFile!.writeAsString(svg);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -145,6 +169,7 @@ class _CreateState extends State<Create> {
             controller: _codeController,
             onChanged: (value) {
               codeValue = value;
+              genBarcode();
               setState(() {});
             },
             maxLines: 2,
@@ -197,12 +222,7 @@ class _CreateState extends State<Create> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       height: 150,
-                      child: SfBarcodeGenerator(
-                        backgroundColor: Colors.white,
-                        value: codeValue,
-                        showValue: true,
-                        textStyle: Theme.of(context).textTheme.bodyLarge,
-                      ),
+                      child: SvgPicture.file(_barcodeFile!),
                     ),
                   ),
                 const SizedBox(height: 10),

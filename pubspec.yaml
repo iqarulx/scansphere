@@ -3,7 +3,7 @@ description: "A new Flutter project."
 
 publish_to: 'none'
 
-version: 0.0.2
+version: 0.0.3
 
 environment:
   sdk: '>=3.4.3 <4.0.0'
@@ -19,7 +19,6 @@ dependencies:
   iconsax: ^0.0.8
   url_launcher: ^6.3.1
   intl: ^0.19.0
-  syncfusion_flutter_barcodes: ^27.2.3
   open_file: ^3.5.10
   path_provider: ^2.1.5
   path_provider_platform_interface: ^2.1.2
@@ -27,6 +26,9 @@ dependencies:
   image_picker: ^1.1.2
   qr_flutter: ^4.1.0
   path: ^1.9.0
+  barcode: ^2.2.9
+  flutter_svg: ^2.0.17
+  import_sorter: ^4.6.0
 
 dev_dependencies:
   flutter_test:

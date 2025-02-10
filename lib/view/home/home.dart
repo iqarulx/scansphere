@@ -1,13 +1,18 @@
+// Flutter imports:
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+// Package imports:
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+// Project imports:
+import '/model/model.dart';
+import '/services/services.dart';
+import '/ui/ui.dart';
 import '/view/create/create.dart';
 import '/view/scan/scan.dart';
-import '/ui/ui.dart';
-import '/services/services.dart';
-import '/model/model.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});

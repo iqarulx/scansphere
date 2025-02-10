@@ -1,4 +1,7 @@
+// Dart imports:
 import 'dart:io';
+
+// Package imports:
 import 'package:image_picker/image_picker.dart';
 
 class PickImage {
